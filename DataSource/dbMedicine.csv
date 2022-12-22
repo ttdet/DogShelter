@@ -1,0 +1,12 @@
+DogName,MedName,Directions,RegimineStartDate,NeededFor,BoughtFrom,Stock,UnitPerStock,DosageRegime,SpecialInstruction
+Myrtle,Pimobendan,,5/10/2022,Congestive heart failure,Chewy,50,tablet,1.25mg 7am and 7pm,
+Myrtle,Furosemide,,5/12/2022,Treat swelling caused by CHF,Chewy,60,tablet,12.5mg 7am and 7pm,
+Myrtle,Enalapril,,4/24/2022,Lower blood pressure,Chewy,180,tablet,1/2 tablet 7am,
+Myrtle,Metronidazole liquid,Mix with canned food during meal,4/30/2022,Antibiotic,Chewy,90,mL,10mL 7am and 7pm,
+Zoe,Prednisone,,2/26/2022,Inflammation,Chewy,60,capsule,5mg 7am and 7pm,Only takes this med when wrapped in a piece of cheese
+Andy,Gabapentin,,5/03/2022,Chronic pain,Pet Co,60,capsule,20mg 7pm,
+Zoe,Gabapentin,,4/08/2022,Chronic pain,Pet Co,60,capsule,20mg 7pm,
+Sassy,Gabapentin,,4/08/2022,Chronic pain,Pet Co,60,capsule,20mg 7pm,
+Zoe,Famotidine,,3/01/2022,Reduce GI symptoms,Chewy,30,tablet,20mg 7am and 7pm,
+Sassy,Carprofen,,4/15/2022,Inflammation and pain,Chewy,60,tablet,75mg 7am and 7pm,
+Zoe,Metronidazole liquid,Mix with canned food during meal,5/19/2022,Antibiotic,Chewy,90,mL,10mL 7am and 7pm,

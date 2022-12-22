@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <style>
+            #dog-card-container {
+                width: 80%;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 2rem;
+                display: grid;
+                grid-template-columns: repeat(5,minmax(0,1fr));
+            }
+
+            .collapse-arrow {
+                transform: rotate(90deg);
+                position: absolute;
+                top: 2.5rem;
+                right: 8%;
+                font-size: 1.6rem;
+                color: darkgray;
+                transition: transform 0.2s;
+            }
+
+            .arrow-expanded {
+                transform: rotate(-90deg) translateY(-0.4rem);
+            }
+
+            .dog-card {
+                display: flex;
+                margin: auto;
+                margin-top: 0px;
+            }
+
+            @media (max-width: 1500px) {
+                #dog-card-container {
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 1224px) {
+                #dog-card-container {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 915px) {
+                #dog-card-container {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 615px) {
+                #dog-card-container {
+                    grid-template-columns: repeat(1, minmax(0, 1fr));
+                }
+            }
+
+            .row-span-4 {
+                grid-row: span 4/span 3
+            }
+
+            .card-title {
+                font-size: 30px;
+            }
+
+            .card-text {
+                font-size: 17px;
+            }
+
+            .card {
+                border: 0.1px solid darkgray;
+                border-radius: 15px;
+            }
+
+            #search-bar {
+                display: flex;
+                width: fit-content;
+                margin-left: auto;
+                margin-right: auto;
+                height: 35px;
+            }
+
+            #search-bar > input {
+                height: auto;
+            }
+
+            #search-bar > select {
+                height: auto;
+            }
+
+            #search-bar > label {
+                display: flex;
+                align-items: center;
+                white-space: nowrap;
+            }
+
+            @media (max-width: 768px) {
+                #search-bar {
+                    flex-direction: column;
+                    height: fit-content;
+                }
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <%- include('./blocks/header.ejs') %>
+
+        <div class="container text-center mb-4">
+            <h1 class="text-center mt-3" id="title">View Dogs</h1>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDogModal" style="margin-left: auto; margin-right:auto;">+ Add dog</button>
+        </div>
+
+        <div class="container mb-4">
+            <div style="text-align: center" id="search-bar">
+                <label for="dog-name-filter">Name:</label>
+                <input id="dog-name-filter" style="width: 140px; margin-right: 10px;" class="form-control" />
+                <label for="dog-sex-filter">Sex:</label>
+                <select id="dog-sex-filter" style="margin-right : 10px" class="form-select">
+                    <option value="" selected>-</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+                <label for="dog-breed-filter">Breed:</label>
+                <input id="dog-breed-filter" style="width: 140px; margin-right: 10px;" class="form-control" />
+                <label for="dog-min-age">Minimum age:</label>
+                <input type="number" id="dog-min-age-filter"  style="width: 60px; margin-right: 10px;" min="0" class="form-control"/>
+                <label for="dog-max-age">Maximum age:</label>
+                <input type="number" id="dog-max-age-filter"  style="width: 60px; margin-right: 10px;" min="0" class="form-control"/>
+            </div>
+            <div style="text-align: center; margin-top:10px">
+                <button type="button" class="btn btn-primary" onclick="applyFilter()" style="width: 100px; height: 45px">Search</button>
+            </div>
+        </div>
+            
+
+        <div id="dog-card-container">
+        </div>
+
+        <div class="modal fade" id="confirmDeletionModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Deletion</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p id="deletionText"></p>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="deleteDogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    There was an error deleting the dog.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteDog()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="updateDogModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateDogModalTitle">Update dog info</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="update-dog-form">
+                            <div class="mb-3">
+                                <label for="dog-name" class="col-form-label">* Name:</label>
+                                <input type="text" class="form-control" id="dog-name-update" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-weight" class="col-form-label">Weight in lbs:</label>
+                                <input type="number" class="form-control" id="dog-weight-update" min="0"></input>
+                            </div>
+                            <div class="mb-1">
+                                <label for="dog-sex" class="col-form-label">Sex:</label>
+                                <select class="form-select" id="dog-sex-update">
+                                    <option selected value="">-</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <input class="form-check-input" type="checkbox" id="dog-hasBeenNeuteredSpayed-update">
+                                <label class="form-check-label" for="dog-hasBeenNeuteredSpayed">
+                                    Neutered/Spayed?
+                                </label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-dob-update" class="col-form-label">Date of Birth:</label>
+                                <!-- <input type="text" class="form-control" id="dog-dob-update" placeholder="YYYY-MM-DD"> -->
+                                <div class="input-group date">
+                                    <input type="text" class="form-control" id="dog-dob-update" placeholder="MM/DD/YYYY"></input>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-breed" class="col-form-label">Breed:</label>
+                                <input type="text" class="form-control" id="dog-breed-update"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-info" class="col-form-label">Backstory/Information:</label>
+                                <textarea type="text" class="form-control" id="dog-info-update"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-instructions" class="col-form-label">General Care Instructions:</label>
+                                <textarea type="text" class="form-control" id="dog-instructions-update"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-feedingInstructions" class="col-form-label">Special Feeding
+                                    Instructions:</label>
+                                <textarea type="text" class="form-control" id="dog-feedingInstructions-update"></textarea>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="updateDogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="update-error-message">
+                                    There was an error updating the dog.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-primary" onclick="updateDog()">Confirm Update</button>
+                    </div>
+                </div>
+        
+            </div>
+        
+        </div>
+
+        <div class="modal fade" id="addDogModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add a dog</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-dog-form">
+                            <div class="mb-3">
+                                <label for="dog-name" class="col-form-label">* Name:</label>
+                                <input type="text" class="form-control" id="dog-name" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-weight" class="col-form-label">Weight in lbs:</label>
+                                <input type="number" class="form-control" id="dog-weight" min="1"></input>
+                            </div>
+                            <div class="mb-1">
+                                <label for="dog-sex" class="col-form-label">Sex:</label>
+                                <select class="form-select" id="dog-sex">
+                                    <option selected value="">-</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <input class="form-check-input" type="checkbox" id="dog-hasBeenNeuteredSpayed">
+                                <label class="form-check-label" for="dog-hasBeenNeuteredSpayed">
+                                    Neutered/Spayed?
+                                </label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-dob" class="col-form-label">Date of Birth:</label>
+                                <!-- <input type="text" class="form-control" id="dog-dob" placeholder="YYYY-MM-DD"> -->
+                                <div class="input-group date">
+                                    <input type="text" class="form-control" id="dog-dob" placeholder="MM/DD/YYYY"></input>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="dog-breed" class="col-form-label">Breed:</label>
+                                <input type="text" class="form-control" id="dog-breed"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-info" class="col-form-label">Backstory/Information:</label>
+                                <textarea type="text" class="form-control" id="dog-info"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-instructions" class="col-form-label">General Care Instructions:</label>
+                                <textarea type="text" class="form-control" id="dog-instructions"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="dog-feedingInstructions" class="col-form-label">Special Feeding
+                                    Instructions:</label>
+                                <textarea type="text" class="form-control" id="dog-feedingInstructions"></textarea>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="addDogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="insertion-error-message">
+                                    There was an error adding the dog.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <div id="insertM" class="float-start">message</div> -->
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="addDog()">Add</button>
+                    </div>
+                </div>
+        
+            </div>
+        
+        </div>
+
+
+        <script src="/js/General.js"></script>
+        <script src="/js/DogF.js"></script>
+        <script src="/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
+        <script>
+            DogF.fetchAllDog().then(result => {
+                for(const dogData of result) {  
+                    document.getElementById("dog-card-container").appendChild(DogF.createDogCard(dogData));                    
+                }
+            });
+
+            $(document).ready(() => {
+                $('#dog-dob').datepicker();
+                $('#dog-dob-update').datepicker();
+            })
+
+
+        </script>
+
+        <script>
+            function retrieveDogInfo(dogID) {
+                DogF.searchDogByID(dogID).then(result => {
+                    const dogData = result[0];
+                    document.getElementById('updateDogModal').setAttribute('targetDog', dogID);
+                    $("#updateDogModalTitle").text(`Update dog: ${dogData.Name}`);
+                    document.getElementById('dog-name-update').value = dogData.Name;
+                    document.getElementById('dog-weight-update').value = dogData.WeightInlbs;
+                    document.getElementById('dog-sex-update').value = dogData.Sex;
+                    document.getElementById('dog-hasBeenNeuteredSpayed-update').checked = dogData.hasBeenSpayed;
+                    document.getElementById('dog-dob-update').value = !!dogData.DateOfBirth ? dogData.DateOfBirth.substring(0, 10) : null;
+                    document.getElementById('dog-breed-update').value = dogData.Breed;
+                    document.getElementById('dog-info-update').value = dogData.Information;
+                    document.getElementById('dog-instructions-update').value = dogData.GeneralInstruction;
+                    document.getElementById('dog-feedingInstructions-update').value = dogData.FeedInstruction;
+                });
+            }
+            function prepareDeletion(id, name) {
+                document.getElementById('deletionText').innerText = 'You are about to delete dog: ' + name;
+                document.getElementById('confirmDeletionModal').setAttribute('targetDog', id);
+
+            }
+
+            function applyFilter() {
+                const filters = {
+                    Name: $('#dog-name-filter').val(),
+                    Sex: $("#dog-sex-filter").val(),
+                    Breed: $("#dog-breed-filter").val(),
+                    MinAge: $("#dog-min-age-filter").val(),
+                    MaxAge: $("#dog-max-age-filter").val()
+                }
+
+                for (const k in filters) {
+                    if (filters[k].trim().length == 0) {
+                        delete filters[k];
+                    }
+                }
+
+                fetch('/ApplyDogFilter', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(filters)
+                }).then(response => response.json())
+                .then(rowsets => {
+                    $("#dog-card-container").html("");
+                    for (const r of rowsets) {
+                        $("#dog-card-container").append(DogF.createDogCard(r));
+                    }
+                        
+                })
+                   
+                
+            }
+
+            
+            
+        </script>
+
+        <script>
+            function addDog() {
+
+                let name = $("#dog-name").val()
+                let weight = $('#dog-weight').val()
+                let dob = $('#dog-dob').val()
+
+                if (name.trim().length == 0) {
+                    handleInsertErrMsg('Invalid dog name');
+                    return;
+                } else if (!isNaN(name)) {
+                    handleInsertErrMsg('Dog name cannot be a number');
+                    return;
+                }
+
+                if (weight.trim().length != 0 && (isNaN(weight) || weight <= 0)) {
+                    handleInsertErrMsg('invalid weight');
+                    return;
+                } 
+
+                if (dob.trim().length == 0) {
+                    dob = null;
+                }
+
+                const dogData = {
+                    name: name,
+                    WeightInLbs: weight,
+                    Sex: $("#dog-sex").val(),
+                    HasBeenSpayed: $("#dog-hasBeenNeuteredSpayed").is(":checked"),
+                    DOB: dob,
+                    Breed: $("#dog-breed").val(),
+                    information: $("#dog-info").val(),
+                    GeneralInstruction: $("#dog-instructions").val(),
+                    FeedInstruction: $("#dog-feedingInstructions").val()
+                }
+
+                for (const k in dogData) {
+                    if (!dogData[k] && dogData[k] !== false) {
+                        delete dogData[k];
+                    }
+                }
+
+                fetch('/AddDog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(dogData)
+                }).then(response => {
+
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("addDogModal"));
+                    let addDogErrorToast = bootstrap.Toast.getOrCreateInstance($('#addDogErrorToast'));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                    }
+
+                    return response.json();
+
+                }).then(responseJSON => {
+                    if ('errorMessage' in responseJSON) {
+                        $('#insertion-error-message').text(responseJSON.errorMessage);
+                        bootstrap.Toast.getOrCreateInstance($('#addDogErrorToast')).show();
+                    } else {
+                        const dogData = responseJSON[0];
+                        $("#dog-card-container").append(DogF.createDogCard(dogData));
+                    }   
+                });
+
+            }
+            function updateDog() {
+
+                let ID = document.getElementById('updateDogModal').getAttribute('targetdog');
+                let name = $("#dog-name-update").val();
+                let weight = $("#dog-weight-update").val();
+                let dob = $("#dog-dob-update").val();
+
+
+                if (name.trim().length == 0) {
+                    handleUpdateErrMsg('Invalid dog name');
+                    return;
+                } else if (!isNaN(name)) {
+                    handleUpdateErrMsg('Dog name cannot be a number');
+                    return;
+                }
+
+                if (weight.trim().length != 0 && (isNaN(weight) || weight <= 0)) {
+                    handleInsertErrMsg('invalid weight');
+                    return;
+                } 
+
+                if (dob.trim().length == 0) {
+                    dob = null;
+                }
+
+                const dogData = {
+                    ID: ID, 
+                    Name: name,
+                    WeightInlbs: weight,
+                    HasBeenSpayed: $("#dog-hasBeenNeuteredSpayed-update").is(":checked"),
+                    DOB: dob,
+                    Sex: $("#dog-sex-update").val(),
+                    Breed: $("#dog-breed-update").val(),
+                    Information: $("#dog-info-update").val(),
+                    GeneralInstruction: $("#dog-instructions-update").val(),
+                    FeedInstruction: $("#dog-feedingInstructions-update").val()
+                }
+
+                for (const k in dogData) {
+                    if (!dogData[k] && dogData[k] !== false) {
+                        delete dogData[k];
+                    }
+                }
+
+                fetch('/UpdateDog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(dogData)
+                }).then(response => {
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("updateDogModal"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                        const dogId = document.getElementById('updateDogModal').getAttribute('targetDog');
+                        DogF.refreshDogCard(dogId);
+                    }
+
+                    return response.json()
+
+                }).then(responseJSON => {
+                    console.log(responseJSON);
+                    if ('errorMessage' in responseJSON) {
+                        $('#update-error-message').text(responseJSON.errorMessage);
+                        bootstrap.Toast.getOrCreateInstance($('#updateDogErrorToast')).show();
+                    }   
+                });
+
+
+                }
+            function deleteDog() {
+                var ID = document.getElementById('confirmDeletionModal').getAttribute('targetdog');
+
+                const dogData = {
+                    DogID: ID
+                }
+
+                for (const k in dogData) {
+                    if (!dogData[k] && dogData[k] !== false) {
+                        delete dogData[k];
+                    }
+                }
+
+                fetch('/DeleteDog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(dogData)
+                }).then(response => {
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("confirmDeletionModal"));
+                    let errorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById("deleteDogErrorToast"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                    } else if (response.status == 400) {
+                        errorToast.show();
+                    }
+                });
+
+                document.getElementById('dog-card-' + ID).remove();
+            }
+            function handleInsertErrMsg(errorMsg) {
+                document.getElementById("insertion-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance(document.getElementById("addDogErrorToast"))
+                    .show();
+            }
+
+            function handleUpdateErrMsg(errorMsg) {
+                document.getElementById("update-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance($("#updateDogErrorToast"))
+                    .show();
+            }
+        </script>
+
+    </body>
+
+</html>

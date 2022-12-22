@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+      <link rel="stylesheet" href="/css/bootstrap.min.css" />
+
+        <style>
+            .arrow-btn {
+                border: none;
+                padding: 12px 48px 12px 24px;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7.41' height='12' viewBox='0 0 7.41 12'%3E%3Cpath d='M10,6,8.59,7.41,13.17,12,8.59,16.59,10,18l6-6Z' transform='translate(-8.59 -6)' fill='%23fff'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 24px center;
+                margin-left:auto;
+                margin-right: auto;
+            }
+
+            .btn-container {
+                display: flex;
+                width: 72%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .btn-group2 {
+                margin-left: auto;
+                margin-right: auto;
+                gap: 1rem;
+                display: flex;
+                flex-direction: column;
+                margin-bottom: 15px
+            }
+
+            @media (max-width: 995px) {
+                .btn-container {
+                    flex-direction: column;
+                }
+            }
+        </style>
+
+  </head>
+
+  <body>
+
+      <%- include('./blocks/header.ejs') %>
+
+      <div class="container text-center mt-5">
+          <h1>Welcome back</h1>
+          <div class="mt-5 btn-container">
+              <div class="btn-group2">
+                <a class="btn btn-info arrow-btn text-white" role="button" href="/dog">View dogs</a>
+                <a class="btn btn-info arrow-btn text-white" role="button" href="/volunteer">View volunteers</a>
+                <a class="btn btn-info arrow-btn text-white" role="button" href="/shift">View shifts</a>
+              </div>
+              <div class="btn-group2">
+                <a class="btn btn-primary arrow-btn" role="button" href="/medPlan">View medication plans</a>
+                <a class="btn btn-primary arrow-btn" role="button" href="/bathroomLog">View bathroom logs</a>
+                <a class="btn btn-primary arrow-btn" role="button" href="/mealLog">View meal logs</a>
+                <a class="btn btn-primary arrow-btn" role="button" href="/medLog">View medication logs</a>
+              </div>
+              <div class="btn-group2">
+                <a class="btn btn-success arrow-btn" role="button" href="/medication">View medications</a>
+                <a class="btn btn-success arrow-btn" role="button" href="/food">View foods</a>
+              </div>
+
+          </div>
+      </div>
+
+      <script src="/js/bootstrap.bundle.min.js"></script>
+
+  </body>
+  
+</html>

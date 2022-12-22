@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/bootstrap.min.css" />
+        <style>
+
+            #med-card-container {
+                width: 80%;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 2rem;
+                display: grid;
+                grid-template-columns: repeat(5,minmax(0,1fr));
+            }
+
+            .collapse-arrow {
+                transform: rotate(90deg);
+                position: absolute;
+                top: 1.3rem;
+                right: 8%;
+                font-size: 1.6rem;
+                color: darkgray;
+                transition: transform 0.2s;
+            }
+
+            .arrow-expanded {
+                transform: rotate(-90deg) translateY(-0.4rem);
+            }
+
+            .med-card {
+                display: flex;
+                margin: auto;
+                margin-top: 0px;
+            }
+
+            @media (max-width: 1500px) {
+                #med-card-container {
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 1224px) {
+                #med-card-container {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 915px) {
+                #med-card-container {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 615px) {
+                #med-card-container {
+                    grid-template-columns: repeat(1, minmax(0, 1fr));
+                }
+            }
+
+            .row-span-4 {
+                grid-row: span 4/span 3
+            }
+
+            .card-title {
+                font-size: 30px;
+            }
+
+            .card-text {
+                font-size: 17px;
+            }
+
+            .card {
+                border: 0.1px solid darkgray;
+                border-radius: 15px;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <%- include('./blocks/header.ejs') %>
+
+        <div class="container text-center mb-4">
+            <h1 class="text-center mt-3" id="title">View Medications</h1>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMedModal" style="margin-left: auto; margin-right:auto;">+ Add medication</button>
+        </div>
+
+        <div id="med-card-container">
+        </div>
+
+        <div class="modal fade" id="confirmDeletionModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Deletion</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p id="deletionText"></p>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="deleteMedErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    There was an error deleting the med.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteMed()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="updateMedModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateMedModalTitle">Update medication info</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="update-med-form">
+                            <div class="mb-1">
+                                <label for="med-name" class="col-form-label">* Name:</label>
+                                <input type="text" class="form-control" id="med-name-update" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-directions" class="col-form-label">Directions:</label>
+                                <input type="text" class="form-control" id="med-directions-update"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-neededFor" class="col-form-label">Needed For:</label>
+                                <input type="text" class="form-control" id="med-neededFor-update"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-boughtFrom" class="col-form-label">Bought From:</label>
+                                <input type="text" class="form-control" id="med-boughtFrom-update"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-amount-update" class="col-form-label">* Stock:</label>
+                                <input type="number" step="0.1" class="form-control" min="0" id="med-stock-update" placeholder="Up to 999.9"/>
+                            </div>     
+                            <div class="mb-3">
+                                <label for="med-units-update" class="col-form-label">Units per stock:</label>
+                                <input type="text" class="form-control" id="med-units-update" placeholder="E.g. mg"/>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="updateMedErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="update-error-message">
+                                    There was an error updating the med.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-primary" onclick="updateMed()">Confirm Update</button>
+                    </div>
+                </div>
+        
+            </div>
+        
+        </div>
+
+        <div class="modal fade" id="addMedModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add a medication</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-med-form">
+                            <div class="mb-1">
+                                <label for="med-name" class="col-form-label">* Name:</label>
+                                <input type="text" class="form-control" id="med-name" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-directions" class="col-form-label">Directions:</label>
+                                <input type="text" class="form-control" id="med-directions"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-neededFor" class="col-form-label">Needed For:</label>
+                                <input type="text" class="form-control" id="med-neededFor"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-boughtFrom" class="col-form-label">Bought From:</label>
+                                <input type="text" class="form-control" id="med-boughtFrom"></input>
+                            </div>
+                            <div class="mb-3">
+                                <label for="med-amount-update" class="col-form-label">* Stock:</label>
+                                <input type="number" step="0.1" class="form-control" min="0" id="med-stock" placeholder="Up to 999.9"/>
+                            </div>     
+                            <div class="mb-3">
+                                <label for="med-units" class="col-form-label">Units per stock:</label>
+                                <input type="text" class="form-control" id="med-units" placeholder="E.g. mg"/>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="addMedErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="insertion-error-message">
+                                    There was an error adding the med.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <div id="insertM" class="float-start">message</div> -->
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="addMed()">Add</button>
+                    </div>
+                </div>
+        
+            </div>
+        
+        </div>
+
+
+        <script src="/js/General.js"></script>
+        <script src="/js/MedF.js"></script>
+        <script src="/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+
+        <script>
+            MedF.fetchAllMed().then(result => {
+                for(const medData of result) {  
+                    document.getElementById("med-card-container").appendChild(MedF.createMedCard(medData));                    
+                }
+            });
+        
+        </script>
+
+        <script>
+            function retrieveMedInfo(medID) {
+                MedF.searchMedByID(medID).then(result => {
+                    const medData = result[0];
+                    $('#updateMedModal').attr('targetMed', medID);
+                    $("#updateMedModalTitle").text(`Update medication: ${medData.Name}`);
+                    $('#med-name-update').val(medData.Name);
+                    $('#med-directions-update').val(medData.Directions);
+                    $('#med-boughtFrom-update').val(medData.BoughtFrom);
+                    $('#med-neededFor-update').val(medData.NeededFor);
+                    $('#med-stock-update').val(medData.Stock);
+                    $('#med-units-update').val(medData.UnitPerStock);
+                });
+            }
+            function prepareDeletion(id, name) {
+                document.getElementById('deletionText').innerText = 'You are about to delete med: ' + name;
+                document.getElementById('confirmDeletionModal').setAttribute('targetMed', id);
+
+            }
+            
+        </script>
+
+        <script>
+            function addMed() {
+
+                let name = $('#med-name').val();
+                let stock = $('#med-stock').val();
+
+                if (stock.trim().length == 0) {
+                    handleInsertErrMsg('Please specify stock');
+                    return;
+                } else if (stock < 0 || isNaN(stock)) {
+                    handleInsertErrMsg('Invalid stock');
+                    return;
+                }
+
+                if (name.trim().length == 0) {
+                    handleInsertErrMsg('invalid medicine name');
+                    return;
+                } else if (!isNaN(name)) {
+                    handleInsertErrMsg('Med name cannot be a number');
+                    return;
+                }
+                const medData = {
+                    Name: name,
+                    Directions: $("#med-directions").val(),
+                    NeededFor: $("#med-neededFor").val(),
+                    BoughtFrom: $("#med-boughtFrom").val(),
+                    Stock: stock,
+                    UnitPerStock: $('#med-units').val()
+                }
+
+                for (const k in medData) {
+                    if (!medData[k] && medData[k] !== false) {
+                        delete medData[k];
+                    }
+                }
+
+                console.log(medData);
+                fetch('/AddMed', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(medData)
+                }).then(response => {
+
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("addMedModal"));
+                    let addMedErrorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById("addMedErrorToast"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                    } else if (response.status == 400) {
+                        addMedErrorToast.show();
+                    }
+
+                    return response.json();
+
+                }).then(rowset => {
+                    const medData = rowset[0];
+                    document.getElementById("med-card-container").appendChild(MedF.createMedCard(medData));   
+                });
+
+            }
+            function updateMed() {
+
+                var ID = document.getElementById('updateMedModal').getAttribute('targetmed');
+                let name = $('#med-name-update').val();
+                let stock = $('#med-stock-update').val();
+
+                if (name.trim().length == 0) {
+                    handleUpdateErrMsg('invalid medicine name');
+                    return;
+                } else if (!isNaN(name)) {
+                    handleUpdateErrMsg('Med name cannot be a number');
+                    return;
+                }
+
+                if (stock.trim().length == 0) {
+                    handleUpdateErrMsg('Please specify stock');
+                    return;
+                } else if (stock <= 0 || isNaN(stock)) {
+                    handleUpdateErrMsg('Invalid stock');
+                    return;
+                }
+
+
+                const medData = {
+                    ID: ID, 
+                    Name: name,
+                    Directions: $("#med-directions-update").val(),
+                    NeededFor: $("#med-neededFor-update").val(),
+                    BoughtFrom: $("#med-boughtFrom-update").val(),
+                    Stock: stock,
+                    UnitPerStock: $('#med-units-update').val()
+                }
+
+                for (const k in medData) {
+                    if (!medData[k] && medData[k] !== false) {
+                        delete medData[k];
+                    }
+                }
+
+                fetch('/UpdateMed', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(medData)
+                }).then(response => {
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("updateMedModal"));
+                    let updateMedErrorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById("updateMedErrorToast"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                        const medId = document.getElementById('updateMedModal').getAttribute('targetMed');
+                        MedF.refreshMedCard(medId);
+                    } else if (response.status == 400) {
+                        updateMedErrorToast.show();
+                    }
+                });
+
+
+                }
+            function deleteMed() {
+                var ID = document.getElementById('confirmDeletionModal').getAttribute('targetmed');
+
+                const medData = {
+                    MedID: ID
+                }
+
+                for (const k in medData) {
+                    if (!medData[k] && medData[k] !== false) {
+                        delete medData[k];
+                    }
+                }
+
+                fetch('/DeleteMed', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(medData)
+                }).then(response => {
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("confirmDeletionModal"));
+                    let errorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById("deleteMedErrorToast"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                    } else if (response.status == 400) {
+                        errorToast.show();
+                    }
+                });
+
+                document.getElementById('med-card-' + ID).remove();
+            }
+        
+            function handleInsertErrMsg(errorMsg) {
+                document.getElementById("insertion-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance(document.getElementById("addMedErrorToast"))
+                    .show();
+            }
+
+            function handleUpdateErrMsg(errorMsg) {
+                document.getElementById("update-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance($("#updateMedErrorToast"))
+                    .show();
+            }
+        </script>
+
+    </body>
+
+</html>

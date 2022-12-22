@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/wickedpicker@0.4.3/dist/wickedpicker.min.css">
+        <style>
+            #brlog-card-container {
+                width: 80%;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 2rem;
+                display: grid;
+                grid-template-columns: repeat(5,minmax(0,1fr));
+            }
+
+            .collapse-arrow {
+                transform: rotate(90deg);
+                position: absolute;
+                top: 2.5rem;
+                right: 8%;
+                font-size: 1.6rem;
+                color: darkgray;
+                transition: transform 0.2s;
+            }
+
+            .arrow-expanded {
+                transform: rotate(-90deg) translateY(-0.4rem);
+            }
+
+            .dog-card {
+                display: flex;
+                margin: auto;
+                margin-top: 0px;
+            }
+
+            @media (max-width: 1500px) {
+                #brlog-card-container {
+                    grid-template-columns: repeat(4, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 1224px) {
+                #brlog-card-container {
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 915px) {
+                #brlog-card-container {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+
+            @media (max-width: 615px) {
+                #brlog-card-container {
+                    grid-template-columns: repeat(1, minmax(0, 1fr));
+                }
+            }
+
+            .row-span-4 {
+                grid-row: span 4/span 3
+            }
+
+            .card-title {
+                font-size: 30px;
+            }
+
+            .card-text {
+                font-size: 17px;
+            }
+
+            .card {
+                border: 0.1px solid darkgray;
+                border-radius: 15px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <%- include('./blocks/header.ejs') %>
+
+        <div class="container text-center mb-4">
+            <h1 class="text-center mt-3" id="title">View Bathroom Logs</h1>
+        </div>
+
+        <div class="container w-25 mb-4">
+            <label for="dog-select" class="col-form-label">Select dog:</label>
+            <select class="form-select" id="dog-select">
+                <option value="-1">-</option>
+            </select>
+            <div class="w-100 text-center mt-2">
+                <button type="button" class="btn btn-primary btn-sm d-none" id="addBRLogButton" data-bs-toggle="modal" data-bs-target="#addBRLogModal" style="margin-left: auto; margin-right:auto;">+ Add bathroom log</button>
+            </div>
+        </div>
+
+        <div class="container w-25 text-center mb-5">
+            <h6>Filter by date</h6>
+            <div class="row">
+                <div class="col">
+                    <input type="text" class="form-control" id="log-filter-startdate" placeholder="Start date"></input>
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" id="log-filter-enddate" placeholder="End date"></input>
+                </div>
+            </div>
+        </div>
+
+        <div id="brlog-card-container">
+        </div>
+
+        <div class="modal fade" id="confirmDeletionModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Deletion</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p id="deletionText"></p>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="deleteBRLogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    There was an error deleting the Bathroom Log.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteBRLog()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="updateBRLogModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Bathroom Log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="update-BRLog-form">
+                            <div class="mb-3">
+                                <label for="brlog-type-update" class="col-form-label">* Bathroom Type:</label>
+                                <select class="form-select" id="brlog-type-update">
+                                    <option selected value="">-</option>
+                                    <option value="urination">Urination</option>
+                                    <option value="defecation">Defecation</option>
+                                    <option value="both">Both</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="brlog-date-update" class="col-form-label">Date:</label>
+                                <div class="input-group date">
+                                    <input type="text" class="form-control" id="brlog-date-update" placeholder="Set to today if left blank"></input>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="brlog-time-update" class="col-form-label">Time:</label>
+                                <input type="text" class="form-control" id="brlog-time-update" placeholder="Set to current time if left blank">
+                            </div>
+                            <div class="mb-3">
+                                <label for="brlog-note-update" class="col-form-label">Note:</label>
+                                <textarea type="text" class="form-control" id="brlog-note-update"></textarea>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="updateBRLogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="update-error-message">E</div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <div id="insertM" class="float-start">message</div> -->
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-primary" onclick="updateBRLog()">Confirm Update</button>
+                    </div>
+                </div>
+        
+            </div>
+        
+        </div>
+
+        <div class="modal fade" id="addBRLogModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addBRLogModalTitle">Add a bathroom log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-brlog-form">
+                            <div class="mb-3">
+                                <label for="brlog-type" class="col-form-label">* Bathroom Type:</label>
+                                <select class="form-select" id="brlog-type">
+                                    <option selected value="">-</option>
+                                    <option value="urination">Urination</option>
+                                    <option value="defecation">Defecation</option>
+                                    <option value="both">Both</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="brlog-date" class="col-form-label">Date:</label>
+                                <div class="input-group date">
+                                    <input type="text" class="form-control" id="brlog-date" placeholder="Set to today if left blank"></input>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="brlog-time" class="col-form-label">Time:</label>
+                                <input type="text" class="form-control" id="brlog-time" placeholder="Set to current time if left blank">
+                            </div>
+                            <div class="mb-3">
+                                <label for="brlog-note" class="col-form-label">Additional Notes:</label>
+                                <textarea type="text" class="form-control" id="brlog-note"></textarea>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="addBRLogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="insertion-error-message">
+                                    There was an error adding the log.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                                    aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="addBRLog()">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="/js/General.js"></script>
+        <script src="/js/BRLogF.js"></script>
+        <script src="/js/dselect.js"></script>
+        <script src="/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js" integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/wickedpicker@0.4.3/dist/wickedpicker.min.js"></script>
+
+        
+        <script>
+            function retrieveBRLogInfo(BRLogID) {
+                BRLogF.searchBRLogByID(BRLogID).then(result => {
+                    const data = result[0];
+                    $('#updateBRLogModal').attr('target-BR-Log', BRLogID);
+                    $('#brlog-date-update').val(data.Date);
+                    // $('#brLog-time-update').val(data.Time);
+                    $('#brlog-type-update').val(data.Type);
+                    $('#brlog-note-update').val(data.Note);
+                });
+            }
+
+            function prepareDeletion(id, name) {
+                $('#confirmDeletionModal').attr('target-BR-Log', id);
+                //$('#deletionText').text(`Deleting log for: ${name}`)
+            }
+            
+        </script>
+        
+        
+        <script>
+
+            const dogNameForID = {};
+
+            function retrieveLogsApplyFilters() {
+                const data = {
+                    DogID: $('#dog-select option:selected').val(),
+                    StartDate: $('#log-filter-startdate').val(),
+                    EndDate: $('#log-filter-enddate').val()
+                }
+
+                for (const k in data) {
+                    if (data[k] != null && data[k].trim().length == 0)
+                        delete data[k];
+                }
+
+                fetch('/ApplyBRLogFilter', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(responseJSON => {
+                    const cardContainer = document.getElementById('brlog-card-container');
+                    $(cardContainer).empty();
+
+                    for (const data of responseJSON) {
+                        cardContainer.appendChild(BRLogF.createBRLogCard(data));
+                    }
+                })
+            }
+
+            $(document).ready(() => {
+                General.initTimePicker('#brlog-time', 74);
+                General.initTimePicker('#brlog-time-update', 74);
+                $('#brlog-date').datepicker({
+                    todayBtn: 'linked'
+                });
+                $('#brlog-date-update').datepicker({
+                    todayBtn: 'linked'
+                });
+                $('#log-filter-startdate').datepicker().on('changeDate', retrieveLogsApplyFilters);
+                $('#log-filter-enddate').datepicker().on('changeDate', retrieveLogsApplyFilters);
+
+                $('#log-filter-startdate').on('input', retrieveLogsApplyFilters);
+                $('#log-filter-enddate').on('input', retrieveLogsApplyFilters);
+
+                addBRLogModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("addBRLogModal"));
+                urlParams = new URLSearchParams(window.location.search);
+
+                if(urlParams.get('addForID')) {
+                    addBRLogModal.show();
+                }
+            });
+
+            fetch('/SearchDogByName', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(rowset => {
+                const dogSelect = $("#dog-select");
+
+                for(const dogData of rowset) {
+                    dogSelect.append(General.htmlToElement(`<option value="${dogData.ID}">${dogData.Name}</option>`));
+                    dogNameForID[dogData.ID] = dogData.Name;
+                }
+
+                dselect(document.getElementById('dog-select'), {
+                    search: true
+                });
+
+                dogSelect.change((e) => {
+                    onSelectDogID($(e.target).val());
+                });
+
+                const addForID = urlParams.get('addForID');
+
+                if(addForID) {
+                    setDSelectToID(dogSelect, addForID);
+                }
+
+            });
+
+            function handleInsertErrMsg(errorMsg) {
+                $("#insertion-error-message").text(errorMsg);
+                bootstrap.Toast
+                    .getOrCreateInstance(document.getElementById("addBRLogErrorToast"))
+                    .show();
+            }
+
+            function handleUpdateErrMsg(errorMsg) {
+                document.getElementById("update-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance($("#updateBRLogErrorToast"))
+                    .show();
+            }
+        </script>
+
+        <script>
+
+            function addBRLog() {
+                const brLogData = {
+                    dID: $("#dog-select option:selected").val(),
+                    time: $("#brlog-time").val(),
+                    date: $("#brlog-date").val(),
+                    type: $("#brlog-type").val(),
+                    Note: $("#brlog-note").val()
+                }
+
+                console.log(brLogData);
+
+                for (const k in brLogData) {
+                    if (!brLogData[k] && brLogData[k] !== false) {
+                        delete brLogData[k];
+                    }
+                }
+
+                fetch('/AddBRLog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(brLogData)
+                }).then(response => {
+
+                    let addBRLogErrorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById("addBRLogErrorToast"));
+
+                    if (response.status == 200) {
+                        addBRLogModal.hide();
+                    } else if (response.status == 400) {
+                        addBRLogErrorToast.show();
+                    }
+
+                    return response.json();
+
+                }).then(resultJSON => {
+
+                    if('errorMessage' in resultJSON) {
+                        handleInsertErrMsg(resultJSON.errorMessage);
+                        return;
+                    }
+
+                    const brLogData = resultJSON[0];
+                    document.getElementById("brlog-card-container").appendChild(BRLogF.createBRLogCard(brLogData));   
+                });
+            }
+
+            function onSelectDogID(dogID) {
+                const button = $('#addBRLogButton');
+                if(dogID == -1) {
+                    button.addClass('d-none');
+                }
+                else {
+                    button.text(`+ Add bathroom log for ${dogNameForID[dogID]}`)
+                    $('#addBRLogModalTitle').text(`Add bathroom log for ${dogNameForID[dogID]}`);
+                    button.removeClass('d-none');
+                }
+
+                
+                // BRLogF.searchBRLogsForDogID(dogID).then(result => {
+                //     const brLogCardContainer = document.getElementById('brlog-card-container');
+                //     $(brLogCardContainer).empty();
+
+                //     for(const brLogData of result) {  
+                //         brLogCardContainer.appendChild(BRLogF.createBRLogCard(brLogData));                    
+                //     }
+                // });
+                retrieveLogsApplyFilters();
+            }
+
+            function updateBRLog() {
+
+                var ID = $('#updateBRLogModal').attr('target-BR-Log');
+
+
+                const brLogData = {
+                    ID: ID,
+                    dID: $("#dog-select option:selected").val(),
+                    time: $("#brlog-time-update").val(),
+                    date: $("#brlog-date-update").val(),
+                    type: $("#brlog-type-update").val(),
+                    Note: $("#brlog-note-update").val()
+                }
+
+                console.log(brLogData.time);
+
+                for (const k in brLogData) {
+                    if (!brLogData[k] && brLogData[k] !== false) {
+                        delete brLogData[k];
+                    }
+                }
+
+                fetch('/UpdateBRLog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(brLogData)
+                }).then(response => {
+
+                    if (response.status == 200) {
+                        bootstrap.Modal
+                            .getOrCreateInstance($('#updateBRLogModal'))
+                            .hide();
+                        BRLogF.refreshBRLogCard(ID);
+                    }
+
+                    return response.json();
+
+                }).then(responseJSON => {
+
+                    if('errorMessage' in responseJSON) {
+                        handleUpdateErrMsg(responseJSON.errorMessage);
+                    }
+
+                });
+
+
+            }
+
+            function deleteBRLog() {
+                var ID = $('#confirmDeletionModal').attr('target-BR-Log');
+
+                const BRLogData = {
+                    ID: ID
+                }
+
+                fetch('/DeleteBRLog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(BRLogData)
+                }).then(response => {
+                    let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById("confirmDeletionModal"));
+                    let errorToast = bootstrap.Toast.getOrCreateInstance(document.getElementById("deleteBRLogErrorToast"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                    } else if (response.status == 400) {
+                        errorToast.show();
+                    }
+                });
+
+                document.getElementById('brlog-card-' + ID).remove();
+            }
+        </script>
+
+    </body>
+
+</html>

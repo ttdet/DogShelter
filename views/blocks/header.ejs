@@ -1,0 +1,49 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">Dog Shelter DB</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="/dog">Dogs</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/volunteer">Volunteers</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/shift">Shift Info</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/medPlan">Medication Plans</a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="logDropdown" role="button" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            Logs
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="logDropdown">
+            <li><a class="dropdown-item" href="/bathroomLog">Bathroom logs</a></li>
+            <li><a class="dropdown-item" href="/mealLog">Meal logs</a></li>
+            <li><a class="dropdown-item" href="/medLog">Med logs</a></li>
+          </ul>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="stockDropdown" role="button" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            Stock
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="stockDropdown">
+            <li><a class="dropdown-item" href="/medication">Medication</a></li>
+            <li><a class="dropdown-item" href="/food">Food</a></li>
+          </ul>
+        </li>
+      </ul>
+      <form class="d-flex">
+        <a class="nav-link" href="/logout" style="color: rgba(0,0,0,.55)">Logout</a>
+      </form>
+    </div>
+  </div>
+</nav>

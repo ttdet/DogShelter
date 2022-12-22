@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="/css/bootstrap.min.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/wickedpicker@0.4.3/dist/wickedpicker.min.css">
+    <style>
+        #MealLog-card-container {
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            gap: 2rem;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .collapse-arrow {
+            transform: rotate(90deg);
+            position: absolute;
+            top: 1.6rem;
+            right: 8%;
+            font-size: 1.6rem;
+            color: darkgray;
+            transition: transform 0.2s;
+        }
+
+        .arrow-expanded {
+            transform: rotate(-90deg) translateY(-0.4rem);
+        }
+
+        .MealLog-card {
+            display: flex;
+            margin: auto;
+            margin-top: 0px;
+        }
+
+        @media (max-width: 1500px) {
+            #MealLog-card-container {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1224px) {
+            #MealLog-card-container {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 915px) {
+            #MealLog-card-container {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 615px) {
+            #MealLog-card-container {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+        }
+
+        .row-span-4 {
+            grid-row: span 4/span 3
+        }
+
+        .card-title {
+            font-size: 30px;
+        }
+
+        .card-text {
+            font-size: 17px;
+        }
+
+        .card {
+            border: 0.1px solid darkgray;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('./blocks/header.ejs') %>
+
+        <div class="container text-center mb-4">
+            <h1 class="text-center mt-3" id="title">View Meal Logs</h1>
+        </div>
+
+        <div class="container w-25 mb-4">
+            <label for="dog-select" class="col-form-label">Select dog:</label>
+            <select class="form-select" id="dog-select">
+                <option value="-1">-</option>
+            </select>
+            <div class="w-100 text-center mt-2">
+                <button type="button" class="btn btn-primary btn-sm d-none" id="addMealLogButton" data-bs-toggle="modal"
+                    data-bs-target="#addMealLogModal" style="margin-left: auto; margin-right:auto;">+ Add meal
+                    log</button>
+            </div>
+        </div>
+
+        <div class="container w-25 text-center mb-5">
+            <h6>Filter by date</h6>
+            <div class="row">
+                <div class="col">
+                    <input type="text" class="form-control" id="log-filter-startdate" placeholder="Start date"></input>
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" id="log-filter-enddate" placeholder="End date"></input>
+                </div>
+            </div>
+        </div>
+
+        <div id="MealLog-card-container">
+        </div>
+
+        <div class="modal fade" id="confirmDeletionModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Deletion</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="deleteMealLogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    There was an error deleting the Meal Log.
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                                    data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="deleteMealLog()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="updateMealLogModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Meal Log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="update-MealLog-form">
+                            <div class="mb-3">
+                                <label for="food-select-update" class="col-form-label">Select Food:</label>
+                                <select class="form-select" id="food-select-update">
+                                    <option value="-1">-</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-date-update" class="col-form-label">Date:</label>
+                                <div class="input-group date">
+                                    <input type="text" class="form-control" id="MealLog-date-update"
+                                        placeholder="Set to today if left blank"></input>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-time-update" class="col-form-label">Time:</label>
+                                <input type="text" class="form-control" id="MealLog-time-update"
+                                    placeholder="Set to current time if left blank">
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-amount-update" class="col-form-label" id="meallog-amount-update-label">* Amount:</label>
+                                <input type="number" step="0.1" class="form-control" id="MealLog-amount-update"
+                                    placeholder="Up to 999.9" min="0.1" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-note-update" class="col-form-label">Note:</label>
+                                <textarea type="text" class="form-control" id="MealLog-note-update"></textarea>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="updateMealLogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="update-error-message">E</div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                                    data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Discard</button>
+                        <button type="button" class="btn btn-primary" onclick="updateMealLog()">Confirm Update</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="modal fade" id="addMealLogModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add a Meal Log</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-MealLog-form">
+                            <div class="mb-3">
+                                <label for="food-select" class="col-form-label">Select Food:</label>
+                                <select class="form-select" id="food-select">
+                                    <option value="-1">-</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-date" class="col-form-label">Date:</label>
+                                <div class="input-group date">
+                                    <input type="text" class="form-control" id="MealLog-date"
+                                        placeholder="Set to today if left blank"></input>
+                                    <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-time" class="col-form-label">Time:</label>
+                                <input type="text" class="form-control" id="MealLog-time"
+                                    placeholder="Set to current time if left blank">
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-amount" class="col-form-label" id="meallog-amount-label">* Amount:</label>
+                                <input type="number" step="0.1" class="form-control" id="MealLog-amount" min="0.1"
+                                    placeholder="Up to 999.9" />
+                            </div>
+                            <div class="mb-3">
+                                <label for="MealLog-note" class="col-form-label">Note:</label>
+                                <textarea type="text" class="form-control" id="MealLog-note"></textarea>
+                            </div>
+                        </form>
+                        <div class="toast align-items-center text-white bg-danger border-0 w-100" role="alert"
+                            aria-live="assertive" aria-atomic="true" id="addMealLogErrorToast">
+                            <div class="d-flex">
+                                <div class="toast-body" id="insertion-error-message">E</div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                                    data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- <div id="insertM" class="float-start">message</div> -->
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="addMealLog()">Add</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <script src="/js/General.js"></script>
+        <script src="/js/MealLogF.js"></script>
+        <script src="/js/dselect.js"></script>
+        <script src="/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+            integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI=" crossorigin="anonymous"></script>
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/wickedpicker@0.4.3/dist/wickedpicker.min.js"></script>
+
+        <script>
+
+
+            function retrieveMealLogInfo(MealLogID) {
+                MealLogF.searchMealLogByID(MealLogID).then(result => {
+                    const data = result[0];
+                    $('#updateMealLogModal').attr('target-Meal-Log', MealLogID);
+                    $('#food-select-update').val(data.FoodID);
+                    $('#MealLog-date-update').val(data.Date);
+                    $('#MealLog-time-update').val(data.Time);
+                    $('#MealLog-amount-update').val(data.Amount);
+                    $('#MealLog-note-update').val(data.Note);
+                    setDSelectToID($('#food-select-update'), data.FoodID);
+                });
+            }
+
+            function prepareDeletion(id, name) {
+                $('#confirmDeletionModal').attr('target-Meal-Log', id);
+
+            }
+
+        </script>
+
+        <script>
+            const dogNameForID = {};
+            const foodForID = {};
+
+            function retrieveLogsApplyFilters() {
+                const data = {
+                    DogID: $('#dog-select option:selected').val(),
+                    StartDate: $('#log-filter-startdate').val(),
+                    EndDate: $('#log-filter-enddate').val()
+                }
+
+                for (const k in data) {
+                    if (data[k] != null && data[k].trim().length == 0)
+                        delete data[k];
+                }
+
+                fetch('/ApplyMealLogFilter', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(responseJSON => {
+                    const cardContainer = document.getElementById('MealLog-card-container');
+                    $(cardContainer).empty();
+
+                    for (const data of responseJSON) {
+                        cardContainer.appendChild(MealLogF.createMealLogCard(data));
+                    }
+                })
+            }
+
+            $(document).ready(() => {
+                General.initTimePicker('#MealLog-time', 74);
+                General.initTimePicker('#MealLog-time-update', 74);
+                $('#MealLog-date').datepicker({
+                    todayBtn: 'linked'
+                });
+                $('#MealLog-date-update').datepicker({
+                    todayBtn: 'linked'
+                });
+                $('#log-filter-startdate').datepicker().on('changeDate', retrieveLogsApplyFilters);
+                $('#log-filter-enddate').datepicker().on('changeDate', retrieveLogsApplyFilters);
+
+                $('#log-filter-startdate').on('input', retrieveLogsApplyFilters);
+                $('#log-filter-enddate').on('input', retrieveLogsApplyFilters);
+
+                addMealLogModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("addMealLogModal"));
+                urlParams = new URLSearchParams(window.location.search);
+
+                if (urlParams.get('addForID')) {
+                    addMealLogModal.show();
+                }
+            });
+
+            $("#MealLog-date").attr('autocomplete', 'off').datepicker({
+                //startDate: "today",
+                todayBtn: "linked"
+            });
+
+            $("#MealLog-date-update").attr('autocomplete', 'off').datepicker({
+                //startDate: "today",
+                todayBtn: "linked"
+            });
+
+            fetch('/FetchAllDog', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(response => response.json())
+                .then(rowset => {
+                    const dogSelect = $("#dog-select");
+
+                    for (const dogData of rowset) {
+                        dogSelect.append(General.htmlToElement(`<option value="${dogData.ID}">${dogData.Name}</option>`));
+                        dogNameForID[dogData.ID] = dogData.Name;
+                    }
+
+                    dselect(document.getElementById('dog-select'), {
+                        search: true
+                    });
+
+                    dogSelect.change((e) => {
+                        onSelectDogID($(e.target).val());
+                    });
+
+                    const addForID = urlParams.get('addForID');
+
+                    if (addForID) {
+                        setDSelectToID(dogSelect, addForID);
+                    }
+
+                })
+                .then(function () {
+                    // Usually too fast for the dbms, so run after 500ms delay
+                    setTimeout(retrieveFoodList, 500);
+                });
+
+            function onSelectDogID(dogID) {
+                const button = $('#addMealLogButton');
+                if (dogID == -1) {
+                    button.addClass('d-none');
+                }
+                else {
+                    button.text(`+ Add meal log for ${dogNameForID[dogID]}`)
+                    $('#addMealLogModalTitle').text(`Add meal log for ${dogNameForID[dogID]}`);
+                    button.removeClass('d-none');
+                }
+
+
+                // MealLogF.searchMealLogByDogID(dogID).then(result => {
+                //     const cardContainer = document.getElementById('MealLog-card-container');
+                //     $(cardContainer).empty();
+
+                //     for (const data of result) {
+                //         cardContainer.appendChild(MealLogF.createMealLogCard(data));
+                //     }
+                // });
+                retrieveLogsApplyFilters();
+            }
+
+
+
+            function handleInsertErrMsg(errorMsg) {
+                document.getElementById("insertion-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance(document.getElementById("addMealLogErrorToast"))
+                    .show();
+            }
+
+            function handleUpdateErrMsg(errorMsg) {
+                document.getElementById("update-error-message")
+                    .innerText = errorMsg;
+                bootstrap.Toast
+                    .getOrCreateInstance($("#updateMealLogErrorToast"))
+                    .show();
+            }
+
+            function retrieveFoodList() {
+                fetch('/Food', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }).then(response => response.json())
+                    .then(rowset => {
+
+                        for (const data of rowset) {
+                            $("#food-select")
+                                .append(General.htmlToElement(`<option value="${data.ID}">${data.Name}</option>`));
+                            $("#food-select-update")
+                                .append(General.htmlToElement(`<option value="${data.ID}">${data.Name}</option>`));
+
+                            foodForID[data.ID] = data
+                        }
+
+                        dselect(document.getElementById('food-select'), {
+                            search: true
+                        });
+
+                        dselect(document.getElementById('food-select-update'), {
+                            search: true
+                        });
+
+                        $('#food-select').change((e) => {
+
+                            const foodID = $(e.target).val();
+                            const food = foodForID[foodID];
+                            if(food && food.UnitPerStock) {
+                                $('#meallog-amount-label').text(`* Amount (${food.UnitPerStock}):`)
+                            } else {
+                                $('#meallog-amount-label').text(`* Amount:`)
+                            }
+
+                        });
+
+                        $('#food-select-update').change((e) => {
+
+                            const foodID = $(e.target).val();
+                            const food = foodForID[foodID];
+                            if(food && food.UnitPerStock) {
+                                $('#meallog-amount-update-label').text(`* Amount (${food.UnitPerStock}):`)
+                            } else {
+                                $('#meallog-amount-update-label').text(`* Amount:`)
+                            }
+
+                        });
+                    })
+            }
+        </script>
+
+        <script>
+            function addMealLog() {
+                let foodID = $('#food-select').val();
+                let amt = $("#MealLog-amount").val();
+
+                if (foodID == -1) {
+                    handleInsertErrMsg('Please specify food');
+                    return;
+                }
+
+                if (amt.trim().length == 0) {
+                    handleInsertErrMsg('Please specify amount');
+                    return;
+                } else if (amt <= 0 || isNaN(amt)) {
+                    handleInsertErrMsg('Invalid amount');
+                    return;
+                }
+
+
+                const MealLogData = {
+                    fId: foodID,
+                    fName: null,
+                    dId: $("#dog-select option:selected").val(),
+                    dName: null,
+                    date: $("#MealLog-date").val(),
+                    time: $("#MealLog-time").val(),
+                    amount: amt,
+                    Note: $("#MealLog-note").val()
+                }
+
+                for (const k in MealLogData) {
+                    if (MealLogData[k] != null && MealLogData[k].trim().length == 0)
+                        delete MealLogData[k];
+                }
+
+
+                fetch('/AddMealLog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(MealLogData)
+                }).then(response => {
+
+                    if (response.status == 200) {
+                        bootstrap.Modal
+                            .getOrCreateInstance(document.getElementById("addMealLogModal"))
+                            .hide();
+                    }
+
+                    return response.json();
+
+                }).then(responseJSON => {
+                    if ('errorMessage' in responseJSON) {
+                        handleInsertErrMsg(responseJSON.errorMessage);
+                    } else {
+                        const data = responseJSON[0];
+                        document.getElementById("MealLog-card-container").appendChild(MealLogF.createMealLogCard(data));
+                    }
+
+                })
+
+
+            }
+
+            function updateMealLog() {
+
+                var ID = $('#updateMealLogModal').attr('target-Meal-Log');
+                let foodID = $('#food-select-update').val();
+                let amt = $("#MealLog-amount-update").val();
+
+                if (foodID == -1) {
+                    handleUpdateErrMsg('Please specify food');
+                    return;
+                }
+
+                if (amt.trim().length == 0) {
+                    handleUpdateErrMsg('Please specify amount');
+                    return;
+                } else if (amt <= 0 || isNaN(amt)) {
+                    handleUpdateErrMsg('Invalid amount');
+                    return;
+                }
+
+
+                const MealLogData = {
+                    MealLogID: ID,
+                    fId: foodID,
+                    fName: null,
+                    dId: $("#dog-select option:selected").val(),
+                    dName: null,
+                    date: $("#MealLog-date-update").val(),
+                    time: $("#MealLog-time-update").val(),
+                    amount: amt,
+                    Note: $("#MealLog-note-update").val()
+                }
+
+                for (const k in MealLogData) {
+                    if (MealLogData[k] != null && MealLogData[k].trim().length == 0)
+                        delete MealLogData[k];
+                }
+
+
+                fetch('/UpdateMealLog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(MealLogData)
+                }).then(response => {
+
+                    if (response.status == 200) {
+                        bootstrap.Modal
+                            .getOrCreateInstance($('#updateMealLogModal'))
+                            .hide();
+                        const MealLogID = $('#updateMealLogModal').attr('target-Meal-Log');
+                        MealLogF.refreshMealLogCard(MealLogID);
+                    }
+
+                    return response.json();
+
+                }).then(responseJSON => {
+                    console.log(responseJSON);
+                    if ('errorMessage' in responseJSON) {
+                        handleUpdateErrMsg(responseJSON.errorMessage);
+                    }
+
+                })
+
+
+            }
+
+            function deleteMealLog() {
+                var ID = $('#confirmDeletionModal').attr('target-Meal-Log');
+
+                const MealLogData = {
+                    MealLogID: ID
+                }
+
+                fetch('/DeleteMealLog', {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(MealLogData)
+                }).then(response => {
+                    let modal = bootstrap.Modal.getOrCreateInstance($("#confirmDeletionModal"));
+                    let errorToast = bootstrap.Toast.getOrCreateInstance($("#deleteMealLogErrorToast"));
+
+                    if (response.status == 200) {
+                        modal.hide();
+                    } else if (response.status == 400) {
+                        errorToast.show();
+                    }
+                });
+
+                document.getElementById('MealLog-card-' + ID).remove();
+            }
+        </script>
+</body>
+
+</html>
